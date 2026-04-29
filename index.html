@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f5f7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Fitness" />
+
+  <title>Fitness Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <main class="app">
+    <section id="entryScreen" class="screen active">
+      <header>
+        <h1>Fitness</h1>
+        <p class="subtitle">Weight, exercise, and calorie deficit</p>
+      </header>
+
+      <section class="card">
+        <h2>Today</h2>
+
+        <div class="field">
+          <label for="date">Date</label>
+          <input id="date" type="date" />
+        </div>
+
+        <div class="field">
+          <label for="weight">Weight kg</label>
+          <input id="weight" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <div class="field">
+          <label for="calories">Calories</label>
+          <input id="calories" type="number" inputmode="numeric" placeholder="0" />
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Exercise</h2>
+
+        <div class="field">
+          <label for="run">Run km</label>
+          <input id="run" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <div class="field">
+          <label for="walk">Walk km</label>
+          <input id="walk" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <div class="field">
+          <label for="pushups">Pushups</label>
+          <input id="pushups" type="number" inputmode="numeric" placeholder="0" />
+        </div>
+
+        <div class="field">
+          <label for="plank">Plank min</label>
+          <input id="plank" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <div class="checkbox-row">
+          <label for="abs">Ab workout</label>
+          <input id="abs" type="checkbox" />
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <div class="metric">
+          <div class="metric-title">Daily deficit</div>
+          <div id="dailyDeficit" class="metric-value">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-title">TDEE</div>
+          <div class="metric-value">2500</div>
+        </div>
+      </section>
+
+      <section class="card save-card">
+        <button id="saveButton">Save Entry</button>
+        <button id="clearButton" class="secondary-button">Clear Today</button>
+        <p id="savedMessage" class="saved-message"></p>
+      </section>
+    </section>
+
+    <section id="historyScreen" class="screen">
+      <header>
+        <h1>History</h1>
+        <p class="subtitle">Averages and saved entries</p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="metric">
+          <div class="metric-title">7 day intake</div>
+          <div id="avgIntake7" class="metric-value">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-title">7 day deficit</div>
+          <div id="avgDeficit7" class="metric-value">—</div>
+        </div>
+      </section>
+
+      <section class="summary-grid top-gap">
+        <div class="metric">
+          <div class="metric-title">30 day intake</div>
+          <div id="avgIntake30" class="metric-value">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-title">30 day deficit</div>
+          <div id="avgDeficit30" class="metric-value">—</div>
+        </div>
+      </section>
+
+      <section class="card top-gap">
+        <h2>Entries</h2>
+        <div id="historyList"></div>
+      </section>
+    </section>
+  </main>
+
+  <nav>
+    <div class="nav-inner">
+      <button id="entryTab" class="nav-button active">Entry</button>
+      <button id="historyTab" class="nav-button">History</button>
+    </div>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
