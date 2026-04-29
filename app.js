@@ -1,220 +1,132 @@
 
 const TDEE = 2500;
 const STORAGE_KEY = "basic_fitness_tracker_entries";
+const GOALS_KEY = "fitness_tracker_monthly_goals";
+let graphRangeDays = 30;
+let graphMode = "average";
+let entryCalendarMonth = new Date();
+entryCalendarMonth.setDate(1);
 
-const inputs = {
-  date: document.getElementById("date"),
-  weight: document.getElementById("weight"),
-  calories: document.getElementById("calories"),
-  run: document.getElementById("run"),
-  walk: document.getElementById("walk"),
-  pushups: document.getElementById("pushups"),
-  plank: document.getElementById("plank"),
-  abs: document.getElementById("abs")
-};
-
+const inputs = { date: document.getElementById("date"), weight: document.getElementById("weight"), calories: document.getElementById("calories"), run: document.getElementById("run"), walk: document.getElementById("walk"), pushups: document.getElementById("pushups"), abs: document.getElementById("abs") };
+const goalInputs = { runStart: document.getElementById("runStart"), runGoal: document.getElementById("runGoal"), pushupStart: document.getElementById("pushupStart"), pushupGoal: document.getElementById("pushupGoal"), absGoal: document.getElementById("absGoal") };
 const dailyDeficit = document.getElementById("dailyDeficit");
 const saveButton = document.getElementById("saveButton");
 const clearButton = document.getElementById("clearButton");
 const savedMessage = document.getElementById("savedMessage");
 const historyList = document.getElementById("historyList");
-
+const exportButton = document.getElementById("exportButton");
+const importButton = document.getElementById("importButton");
+const importFile = document.getElementById("importFile");
+const backupMessage = document.getElementById("backupMessage");
 const entryScreen = document.getElementById("entryScreen");
 const historyScreen = document.getElementById("historyScreen");
+const graphsScreen = document.getElementById("graphsScreen");
+const calendarScreen = document.getElementById("calendarScreen");
 const entryTab = document.getElementById("entryTab");
 const historyTab = document.getElementById("historyTab");
-
+const graphsTab = document.getElementById("graphsTab");
+const calendarTab = document.getElementById("calendarTab");
 const avgIntake7 = document.getElementById("avgIntake7");
 const avgDeficit7 = document.getElementById("avgDeficit7");
 const avgIntake30 = document.getElementById("avgIntake30");
 const avgDeficit30 = document.getElementById("avgDeficit30");
+const previousMonthButton = document.getElementById("previousMonth");
+const nextMonthButton = document.getElementById("nextMonth");
+const calendarMonthTitle = document.getElementById("calendarMonthTitle");
+const calendarMonthPicker = document.getElementById("calendarMonthPicker");
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarGoalSummary = document.getElementById("calendarGoalSummary");
+const saveGoalsButton = document.getElementById("saveGoalsButton");
+const goalsMessage = document.getElementById("goalsMessage");
+const averageGraphMode = document.getElementById("averageGraphMode");
+const dailyGraphMode = document.getElementById("dailyGraphMode");
+const entryPreviousMonth = document.getElementById("entryPreviousMonth");
+const entryNextMonth = document.getElementById("entryNextMonth");
+const entryCalendarMonthTitle = document.getElementById("entryCalendarMonthTitle");
+const entryCalendarGrid = document.getElementById("entryCalendarGrid");
 
-function todayString() {
-  const today = new Date();
-  const timezoneOffset = today.getTimezoneOffset() * 60000;
-  return new Date(today - timezoneOffset).toISOString().split("T")[0];
-}
+let calendarMonth = new Date();
+calendarMonth.setDate(1);
 
-function loadEntries() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
+function todayString() { const today = new Date(); const timezoneOffset = today.getTimezoneOffset() * 60000; return new Date(today - timezoneOffset).toISOString().split("T")[0]; }
+function dateStringFromParts(year, monthIndex, day) { const date = new Date(year, monthIndex, day); const timezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date - timezoneOffset).toISOString().split("T")[0]; }
+function monthKeyFromDate(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; }
+function dateFromString(dateString) { return new Date(`${dateString}T00:00:00`); }
+function setCalendarMonthFromKey(monthKey) { const [year, month] = monthKey.split("-").map(Number); calendarMonth = new Date(year, month - 1, 1); }
+function setEntryCalendarMonthFromDateString(dateString) { const date = dateFromString(dateString); entryCalendarMonth = new Date(date.getFullYear(), date.getMonth(), 1); }
+function loadEntries() { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return []; try { return JSON.parse(raw); } catch { return []; } }
+function saveEntries(entries) { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+function loadGoals() { const raw = localStorage.getItem(GOALS_KEY); if (!raw) return {}; try { return JSON.parse(raw); } catch { return {}; } }
+function saveGoals(goals) { localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }
+function getGoalsForMonth(date) { const allGoals = loadGoals(); return allGoals[monthKeyFromDate(date)] || { runStart:null, runGoal:null, pushupStart:null, pushupGoal:null, absGoal:null }; }
+function numberOrNull(value) { if (value === "") return null; const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; }
+function intOrNull(value) { if (value === "") return null; const parsed = parseInt(value, 10); return Number.isFinite(parsed) ? parsed : null; }
+function displayNumber(value) { if (!Number.isFinite(value)) return ""; if (Math.abs(value) >= 100) return Math.round(value).toString(); return Number(value.toFixed(1)).toString(); }
 
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
+function updateDeficitPreview() { const calories = intOrNull(inputs.calories.value); if (calories === null) { dailyDeficit.textContent = "—"; dailyDeficit.className = "metric-value"; return; } const deficit = TDEE - calories; dailyDeficit.textContent = deficit.toString(); dailyDeficit.className = deficit >= 0 ? "metric-value positive" : "metric-value negative"; }
+function currentEntryFromForm() { const calories = intOrNull(inputs.calories.value); return { date: inputs.date.value, weight: numberOrNull(inputs.weight.value), calories, deficit: calories === null ? null : TDEE - calories, run: numberOrNull(inputs.run.value), walk: numberOrNull(inputs.walk.value), pushups: intOrNull(inputs.pushups.value), abs: inputs.abs.checked }; }
+function saveCurrentEntry() { const entry = currentEntryFromForm(); if (!entry.date) return; const entries = loadEntries(); const existingIndex = entries.findIndex(item => item.date === entry.date); if (existingIndex >= 0) entries[existingIndex] = entry; else entries.push(entry); entries.sort((a,b) => a.date.localeCompare(b.date)); saveEntries(entries); refreshAllViews(); savedMessage.textContent = "Saved"; setTimeout(() => savedMessage.textContent = "", 1200); }
+function clearForm() { inputs.weight.value = ""; inputs.calories.value = ""; inputs.run.value = ""; inputs.walk.value = ""; inputs.pushups.value = ""; inputs.abs.checked = false; updateDeficitPreview(); }
+function loadEntryForDate() { const entry = loadEntries().find(item => item.date === inputs.date.value); if (!entry) { clearForm(); renderEntryCalendar(); return; } inputs.weight.value = entry.weight ?? ""; inputs.calories.value = entry.calories ?? ""; inputs.run.value = entry.run ?? ""; inputs.walk.value = entry.walk ?? ""; inputs.pushups.value = entry.pushups ?? ""; inputs.abs.checked = Boolean(entry.abs); updateDeficitPreview(); renderEntryCalendar(); }
+function editEntry(dateString) { inputs.date.value = dateString; setEntryCalendarMonthFromDateString(dateString); loadEntryForDate(); showScreen("entry"); window.scrollTo({ top:0, behavior:"smooth" }); }
 
-function saveEntries(entries) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-}
+function renderEntryCalendar() { const entries = loadEntries(); const entryDates = new Set(entries.map(entry => entry.date)); const selectedDate = inputs.date.value; const year = entryCalendarMonth.getFullYear(); const monthIndex = entryCalendarMonth.getMonth(); const monthName = entryCalendarMonth.toLocaleString("default", { month:"long", year:"numeric" }); const firstDay = new Date(year, monthIndex, 1).getDay(); const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); entryCalendarMonthTitle.textContent = monthName; entryCalendarGrid.innerHTML = ""; for (let i = 0; i < firstDay; i++) { const emptyCell = document.createElement("button"); emptyCell.className = "entry-calendar-day empty"; emptyCell.disabled = true; entryCalendarGrid.appendChild(emptyCell); } for (let day = 1; day <= daysInMonth; day++) { const dateString = dateStringFromParts(year, monthIndex, day); const button = document.createElement("button"); button.className = "entry-calendar-day"; if (entryDates.has(dateString)) button.classList.add("has-data"); if (dateString === selectedDate) button.classList.add("selected"); button.textContent = day; button.addEventListener("click", () => { inputs.date.value = dateString; loadEntryForDate(); }); entryCalendarGrid.appendChild(button); } }
 
-function numberOrNull(value) {
-  if (value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
+function loadGoalsForCalendarMonth() { const goals = getGoalsForMonth(calendarMonth); calendarMonthPicker.value = monthKeyFromDate(calendarMonth); goalInputs.runStart.value = goals.runStart ?? ""; goalInputs.runGoal.value = goals.runGoal ?? ""; goalInputs.pushupStart.value = goals.pushupStart ?? ""; goalInputs.pushupGoal.value = goals.pushupGoal ?? ""; goalInputs.absGoal.value = goals.absGoal ?? ""; }
+function saveGoalsForCalendarMonth() { const allGoals = loadGoals(); allGoals[monthKeyFromDate(calendarMonth)] = { runStart: numberOrNull(goalInputs.runStart.value), runGoal: numberOrNull(goalInputs.runGoal.value), pushupStart: intOrNull(goalInputs.pushupStart.value), pushupGoal: intOrNull(goalInputs.pushupGoal.value), absGoal: intOrNull(goalInputs.absGoal.value) }; saveGoals(allGoals); renderCalendar(); goalsMessage.textContent = "Goals saved"; setTimeout(() => goalsMessage.textContent = "", 1200); }
+function averageRecent(entries, days, key) { const recentValues = entries.slice(-days).map(entry => entry[key]).filter(value => typeof value === "number" && Number.isFinite(value)); if (recentValues.length === 0) return null; return recentValues.reduce((sum,value) => sum + value, 0) / recentValues.length; }
+function setAverage(element, value) { element.textContent = value === null ? "—" : Math.round(value).toString(); }
 
-function intOrNull(value) {
-  if (value === "") return null;
-  const parsed = parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
+function renderHistory() { const entries = loadEntries(); setAverage(avgIntake7, averageRecent(entries, 7, "calories")); setAverage(avgDeficit7, averageRecent(entries, 7, "deficit")); setAverage(avgIntake30, averageRecent(entries, 30, "calories")); setAverage(avgDeficit30, averageRecent(entries, 30, "deficit")); if (entries.length === 0) { historyList.innerHTML = '<p class="empty-state">No entries yet.</p>'; return; } historyList.innerHTML = entries.slice().reverse().map(entry => { const details = [entry.weight !== null ? `Weight ${entry.weight} lb` : null, entry.calories !== null ? `Calories ${entry.calories}` : null, entry.deficit !== null ? `Deficit ${entry.deficit}` : null, entry.run !== null ? `Run ${entry.run} km` : null, entry.walk !== null ? `Walk ${entry.walk} km` : null, entry.pushups !== null ? `Pushups ${entry.pushups}` : null, entry.abs ? "Abs" : null].filter(Boolean).join(" · "); return `<button class="history-item" data-date="${entry.date}"><div class="history-date">${entry.date}</div><div class="history-details">${details || "No details entered"}</div></button>`; }).join(""); document.querySelectorAll(".history-item").forEach(item => item.addEventListener("click", () => editEntry(item.dataset.date))); }
 
-function updateDeficitPreview() {
-  const calories = intOrNull(inputs.calories.value);
+function filteredEntriesForGraph(entries) { if (entries.length === 0) return []; const today = new Date(); const end = new Date(today.getFullYear(), today.getMonth(), today.getDate()); const start = new Date(end); start.setDate(start.getDate() - graphRangeDays + 1); return entries.filter(entry => { const entryDate = dateFromString(entry.date); return entryDate >= start && entryDate <= end; }); }
+function rollingAverageData(entries, days, key) { return entries.map((entry, index) => { const windowEntries = entries.slice(Math.max(0, index - days + 1), index + 1); const values = windowEntries.map(item => item[key]).filter(value => typeof value === "number" && Number.isFinite(value)); if (values.length === 0) return { date: entry.date, value: null }; return { date: entry.date, value: values.reduce((sum,value) => sum + value, 0) / values.length }; }); }
+function dailyData(entries, key) { return entries.map(entry => ({ date: entry.date, value: typeof entry[key] === "number" && Number.isFinite(entry[key]) ? entry[key] : null })).filter(point => point.value !== null); }
+function renderGraphs() { const entries = filteredEntriesForGraph(loadEntries()); drawChart("weightChart", entries, "weight"); drawChart("deficitChart", entries, "deficit"); drawChart("runChart", entries, "run"); drawChart("walkChart", entries, "walk"); drawChart("pushupChart", entries, "pushups"); }
+function drawChart(canvasId, entries, key) { if (graphMode === "daily") drawBarChart(canvasId, entries, key); else drawAverageChart(canvasId, entries, key); }
 
-  if (calories === null) {
-    dailyDeficit.textContent = "—";
-    dailyDeficit.className = "metric-value";
-    return;
-  }
+function setupCanvas(canvasId) { const canvas = document.getElementById(canvasId); if (!canvas) return null; const context = canvas.getContext("2d"); const pixelRatio = window.devicePixelRatio || 1; const width = canvas.clientWidth; const height = canvas.height; canvas.width = width * pixelRatio; canvas.height = height * pixelRatio; context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); context.clearRect(0, 0, width, height); return { canvas, context, width, height }; }
+function drawEmpty(context, message = "No data for selected range") { context.fillStyle = "#a1a1a6"; context.font = "15px system-ui"; context.fillText(message, 12, 35); }
+function getAxisScale(values) { let minValue = Math.min(...values); let maxValue = Math.max(...values); if (minValue === maxValue) { const buffer = Math.max(Math.abs(minValue) * 0.05, 1); return { minValue: minValue - buffer, maxValue: maxValue + buffer }; } const range = maxValue - minValue; const buffer = Math.max(range * 0.15, Math.abs(maxValue) < 20 ? 0.5 : 1); return { minValue: minValue - buffer, maxValue: maxValue + buffer }; }
 
-  const deficit = TDEE - calories;
-  dailyDeficit.textContent = deficit.toString();
-  dailyDeficit.className = deficit >= 0 ? "metric-value positive" : "metric-value negative";
-}
+function drawAverageChart(canvasId, entries, key) { const setup = setupCanvas(canvasId); if (!setup) return; const { context, width, height } = setup; const weekly = rollingAverageData(entries, 7, key).filter(point => point.value !== null); const monthly = rollingAverageData(entries, 30, key).filter(point => point.value !== null); const allValues = [...weekly, ...monthly].map(point => point.value); if (entries.length === 0 || allValues.length === 0) { drawEmpty(context); return; } const padding = { top:18, right:12, bottom:32, left:46 }; const chartWidth = width - padding.left - padding.right; const chartHeight = height - padding.top - padding.bottom; const { minValue, maxValue } = getAxisScale(allValues); const dates = entries.map(entry => entry.date); const xForDate = date => dates.length === 1 ? padding.left + chartWidth / 2 : padding.left + (dates.indexOf(date) / (dates.length - 1)) * chartWidth; const yForValue = value => padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight; drawGrid(context, width, height, padding, chartHeight, maxValue, minValue); drawLine(context, monthly, xForDate, yForValue, "#8e8e93", 2); drawLine(context, weekly, xForDate, yForValue, "#0a84ff", 3); drawLegend(context, height, padding); }
+function drawBarChart(canvasId, entries, key) { const setup = setupCanvas(canvasId); if (!setup) return; const { context, width, height } = setup; const data = dailyData(entries, key); if (entries.length === 0 || data.length === 0) { drawEmpty(context); return; } const padding = { top:18, right:12, bottom:32, left:46 }; const chartWidth = width - padding.left - padding.right; const chartHeight = height - padding.top - padding.bottom; const allValues = data.map(point => point.value); let { minValue, maxValue } = getAxisScale(allValues); if (minValue > 0) minValue = Math.max(0, minValue); drawGrid(context, width, height, padding, chartHeight, maxValue, minValue); const startDate = new Date(); startDate.setHours(0,0,0,0); startDate.setDate(startDate.getDate() - graphRangeDays + 1); const endDate = new Date(); endDate.setHours(0,0,0,0); const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000)); const barWidth = Math.max(2, Math.min(18, chartWidth / graphRangeDays * 0.72)); data.forEach(point => { const dayOffset = Math.round((dateFromString(point.date) - startDate) / 86400000); const x = padding.left + (dayOffset / totalDays) * chartWidth - barWidth / 2; const zeroY = padding.top + chartHeight - ((0 - minValue) / (maxValue - minValue)) * chartHeight; const y = padding.top + chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight; const baseline = minValue <= 0 && maxValue >= 0 ? zeroY : padding.top + chartHeight; context.fillStyle = "#0a84ff"; context.fillRect(x, Math.min(y, baseline), barWidth, Math.max(2, Math.abs(baseline - y))); }); context.fillStyle = "#a1a1a6"; context.font = "12px system-ui"; context.fillText("Daily", padding.left, height - 8); }
+function drawGrid(context, width, height, padding, chartHeight, maxValue, minValue) { context.strokeStyle = "#3a3a3c"; context.lineWidth = 1; context.fillStyle = "#a1a1a6"; context.font = "11px system-ui"; const lines = 6; for (let i = 0; i < lines; i++) { const ratio = i / (lines - 1); const y = padding.top + ratio * chartHeight; const value = maxValue - ratio * (maxValue - minValue); context.beginPath(); context.moveTo(padding.left, y); context.lineTo(width - padding.right, y); context.stroke(); context.fillText(displayNumber(value), 3, y + 4); } }
+function drawLegend(context, height, padding) { context.fillStyle = "#a1a1a6"; context.font = "12px system-ui"; context.fillText("Weekly", padding.left, height - 8); context.fillStyle = "#0a84ff"; context.beginPath(); context.arc(padding.left + 48, height - 12, 4, 0, Math.PI * 2); context.fill(); context.fillStyle = "#a1a1a6"; context.fillText("Monthly", padding.left + 70, height - 8); context.fillStyle = "#8e8e93"; context.beginPath(); context.arc(padding.left + 128, height - 12, 4, 0, Math.PI * 2); context.fill(); }
+function drawLine(context, points, xForDate, yForValue, color, lineWidth) { if (points.length === 0) return; context.strokeStyle = color; context.lineWidth = lineWidth; context.lineCap = "round"; context.lineJoin = "round"; context.beginPath(); points.forEach((point, index) => { const x = xForDate(point.date); const y = yForValue(point.value); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); }); context.stroke(); }
 
-function currentEntryFromForm() {
-  const calories = intOrNull(inputs.calories.value);
+function monthEntriesWithBests(entries, year, monthIndex) { let bestRun = 0, bestPushups = 0, cumulativeAbs = 0; const result = new Map(); const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); const entryMap = new Map(entries.map(entry => [entry.date, entry])); for (let day = 1; day <= daysInMonth; day++) { const dateString = dateStringFromParts(year, monthIndex, day); const entry = entryMap.get(dateString); bestRun = Math.max(bestRun, typeof entry?.run === "number" ? entry.run : 0); bestPushups = Math.max(bestPushups, typeof entry?.pushups === "number" ? entry.pushups : 0); cumulativeAbs += entry?.abs ? 1 : 0; result.set(dateString, { entry, bestRun, bestPushups, cumulativeAbs }); } return result; }
+function performanceGoalClass(actual, start, goal, day, daysInMonth) { if (start === null || start === undefined || goal === null || goal === undefined) return ""; if (goal <= start) return ""; const expected = start + ((goal - start) * ((day - 1) / Math.max(1, daysInMonth - 1))); const allowedGap = Math.max((goal - start) * 0.08, 1); const difference = actual - expected; if (difference >= allowedGap * 2) return "goal-green-strong"; if (difference >= 0) return "goal-green"; if (difference >= -allowedGap) return "goal-neutral"; if (difference >= -allowedGap * 2) return "goal-red"; return "goal-red-strong"; }
+function countGoalClass(actual, goal, day, daysInMonth) { if (goal === null || goal === undefined || goal <= 0) return ""; const expected = goal * (day / daysInMonth); const difference = actual - expected; const allowedGap = Math.max(goal * 0.08, 1); if (difference >= allowedGap * 2) return "goal-green-strong"; if (difference >= 0) return "goal-green"; if (difference >= -allowedGap) return "goal-neutral"; if (difference >= -allowedGap * 2) return "goal-red"; return "goal-red-strong"; }
+function renderCalendar() { const entries = loadEntries(); const year = calendarMonth.getFullYear(); const monthIndex = calendarMonth.getMonth(); const monthName = calendarMonth.toLocaleString("default", { month:"long", year:"numeric" }); const firstDay = new Date(year, monthIndex, 1).getDay(); const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); const goals = getGoalsForMonth(calendarMonth); const monthData = monthEntriesWithBests(entries, year, monthIndex); const finalTotals = monthData.get(dateStringFromParts(year, monthIndex, daysInMonth)) || { bestRun:0, bestPushups:0, cumulativeAbs:0 }; calendarMonthTitle.textContent = monthName; calendarMonthPicker.value = monthKeyFromDate(calendarMonth); calendarGrid.innerHTML = ""; for (let i = 0; i < firstDay; i++) { const emptyCell = document.createElement("div"); emptyCell.className = "calendar-day empty"; calendarGrid.appendChild(emptyCell); } for (let day = 1; day <= daysInMonth; day++) { const dateString = dateStringFromParts(year, monthIndex, day); const dayData = monthData.get(dateString); const entry = dayData?.entry; const cell = document.createElement("div"); cell.className = "calendar-day"; const pushups = entry?.pushups ?? null; const run = entry?.run ?? null; const walk = entry?.walk ?? null; const abs = Boolean(entry?.abs); const runClass = run === null ? "" : performanceGoalClass(run, goals.runStart, goals.runGoal, day, daysInMonth); const pushupClass = pushups === null ? "" : performanceGoalClass(pushups, goals.pushupStart, goals.pushupGoal, day, daysInMonth); const absClass = countGoalClass(dayData.cumulativeAbs, goals.absGoal, day, daysInMonth); cell.innerHTML = `<div class="day-number">${day}</div><div class="day-values"><div class="day-value ${pushups !== null ? "has-value" : ""} ${pushupClass}">P: ${pushups !== null ? pushups : "—"}</div><div class="day-value ${run !== null ? "has-value" : ""} ${runClass}">R: ${run !== null ? run : "—"}</div><div class="day-value ${walk !== null ? "has-value" : ""}">W: ${walk !== null ? walk : "—"}</div><div class="day-value ${abs ? "abs-done" : ""} ${absClass}">Abs: ${abs ? "✓" : "—"}</div></div>`; calendarGrid.appendChild(cell); } calendarGoalSummary.innerHTML = `<div class="goal-summary-row"><span>Best run</span><span>${finalTotals.bestRun.toFixed(1)} / ${goals.runGoal ?? "—"} km</span></div><div class="goal-summary-row"><span>Best pushups</span><span>${finalTotals.bestPushups} / ${goals.pushupGoal ?? "—"}</span></div><div class="goal-summary-row"><span>Ab workouts</span><span>${finalTotals.cumulativeAbs} / ${goals.absGoal ?? "—"}</span></div>`; }
 
-  return {
-    date: inputs.date.value,
-    weight: numberOrNull(inputs.weight.value),
-    calories,
-    deficit: calories === null ? null : TDEE - calories,
-    run: numberOrNull(inputs.run.value),
-    walk: numberOrNull(inputs.walk.value),
-    pushups: intOrNull(inputs.pushups.value),
-    plank: numberOrNull(inputs.plank.value),
-    abs: inputs.abs.checked
-  };
-}
-
-function saveCurrentEntry() {
-  const entry = currentEntryFromForm();
-  if (!entry.date) return;
-
-  const entries = loadEntries();
-  const existingIndex = entries.findIndex(item => item.date === entry.date);
-
-  if (existingIndex >= 0) {
-    entries[existingIndex] = entry;
-  } else {
-    entries.push(entry);
-  }
-
-  entries.sort((a, b) => a.date.localeCompare(b.date));
-  saveEntries(entries);
-  renderHistory();
-
-  savedMessage.textContent = "Saved";
-  setTimeout(() => {
-    savedMessage.textContent = "";
-  }, 1200);
-}
-
-function clearForm() {
-  inputs.weight.value = "";
-  inputs.calories.value = "";
-  inputs.run.value = "";
-  inputs.walk.value = "";
-  inputs.pushups.value = "";
-  inputs.plank.value = "";
-  inputs.abs.checked = false;
-  updateDeficitPreview();
-}
-
-function loadEntryForDate() {
-  const entries = loadEntries();
-  const entry = entries.find(item => item.date === inputs.date.value);
-
-  if (!entry) {
-    clearForm();
-    return;
-  }
-
-  inputs.weight.value = entry.weight ?? "";
-  inputs.calories.value = entry.calories ?? "";
-  inputs.run.value = entry.run ?? "";
-  inputs.walk.value = entry.walk ?? "";
-  inputs.pushups.value = entry.pushups ?? "";
-  inputs.plank.value = entry.plank ?? "";
-  inputs.abs.checked = Boolean(entry.abs);
-  updateDeficitPreview();
-}
-
-function averageRecent(entries, days, key) {
-  const recentValues = entries
-    .slice(-days)
-    .map(entry => entry[key])
-    .filter(value => typeof value === "number" && Number.isFinite(value));
-
-  if (recentValues.length === 0) return null;
-  return recentValues.reduce((sum, value) => sum + value, 0) / recentValues.length;
-}
-
-function setAverage(element, value) {
-  element.textContent = value === null ? "—" : Math.round(value).toString();
-}
-
-function renderHistory() {
-  const entries = loadEntries();
-
-  setAverage(avgIntake7, averageRecent(entries, 7, "calories"));
-  setAverage(avgDeficit7, averageRecent(entries, 7, "deficit"));
-  setAverage(avgIntake30, averageRecent(entries, 30, "calories"));
-  setAverage(avgDeficit30, averageRecent(entries, 30, "deficit"));
-
-  if (entries.length === 0) {
-    historyList.innerHTML = '<p class="empty-state">No entries yet.</p>';
-    return;
-  }
-
-  historyList.innerHTML = entries
-    .slice()
-    .reverse()
-    .map(entry => {
-      const details = [
-        entry.weight !== null ? `Weight ${entry.weight} kg` : null,
-        entry.calories !== null ? `Calories ${entry.calories}` : null,
-        entry.deficit !== null ? `Deficit ${entry.deficit}` : null,
-        entry.run !== null ? `Run ${entry.run} km` : null,
-        entry.walk !== null ? `Walk ${entry.walk} km` : null,
-        entry.pushups !== null ? `Pushups ${entry.pushups}` : null,
-        entry.plank !== null ? `Plank ${entry.plank} min` : null,
-        entry.abs ? "Abs" : null
-      ].filter(Boolean).join(" · ");
-
-      return `
-        <div class="history-item">
-          <div class="history-date">${entry.date}</div>
-          <div class="history-details">${details || "No details entered"}</div>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function showScreen(screenName) {
-  const showingEntry = screenName === "entry";
-
-  entryScreen.classList.toggle("active", showingEntry);
-  historyScreen.classList.toggle("active", !showingEntry);
-  entryTab.classList.toggle("active", showingEntry);
-  historyTab.classList.toggle("active", !showingEntry);
-
-  if (!showingEntry) renderHistory();
-}
+function exportData() { const backup = { app:"Spencer's Fitness Tracker", version:6, exportedAt:new Date().toISOString(), entries:loadEntries(), goals:loadGoals() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type:"application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `fitness-tracker-backup-${todayString()}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); backupMessage.textContent = "Exported"; setTimeout(() => backupMessage.textContent = "", 1500); }
+function importData(file) { const reader = new FileReader(); reader.onload = event => { try { const parsed = JSON.parse(event.target.result); const importedEntries = Array.isArray(parsed) ? parsed : parsed.entries; if (!Array.isArray(importedEntries)) throw new Error("Invalid backup format"); const cleanedEntries = importedEntries.filter(entry => typeof entry.date === "string").map(entry => { const calories = typeof entry.calories === "number" ? entry.calories : null; return { date:entry.date, weight:typeof entry.weight === "number" ? entry.weight : null, calories, deficit:calories === null ? null : TDEE - calories, run:typeof entry.run === "number" ? entry.run : null, walk:typeof entry.walk === "number" ? entry.walk : null, pushups:typeof entry.pushups === "number" ? entry.pushups : null, abs:Boolean(entry.abs) }; }).sort((a,b) => a.date.localeCompare(b.date)); saveEntries(cleanedEntries); if (parsed.goals && typeof parsed.goals === "object") saveGoals(parsed.goals); loadEntryForDate(); loadGoalsForCalendarMonth(); refreshAllViews(); backupMessage.textContent = "Imported"; setTimeout(() => backupMessage.textContent = "", 1500); } catch { backupMessage.textContent = "Import failed"; setTimeout(() => backupMessage.textContent = "", 1800); } }; reader.readAsText(file); }
+function refreshAllViews() { renderHistory(); renderGraphs(); renderCalendar(); renderEntryCalendar(); }
+function showScreen(screenName) { const showingEntry = screenName === "entry"; const showingHistory = screenName === "history"; const showingGraphs = screenName === "graphs"; const showingCalendar = screenName === "calendar"; entryScreen.classList.toggle("active", showingEntry); historyScreen.classList.toggle("active", showingHistory); graphsScreen.classList.toggle("active", showingGraphs); calendarScreen.classList.toggle("active", showingCalendar); entryTab.classList.toggle("active", showingEntry); historyTab.classList.toggle("active", showingHistory); graphsTab.classList.toggle("active", showingGraphs); calendarTab.classList.toggle("active", showingCalendar); if (showingEntry) renderEntryCalendar(); if (showingHistory) renderHistory(); if (showingGraphs) renderGraphs(); if (showingCalendar) { loadGoalsForCalendarMonth(); renderCalendar(); } }
 
 inputs.date.value = todayString();
+setEntryCalendarMonthFromDateString(inputs.date.value);
 loadEntryForDate();
-renderHistory();
-
+loadGoalsForCalendarMonth();
+refreshAllViews();
 inputs.calories.addEventListener("input", updateDeficitPreview);
-inputs.date.addEventListener("change", loadEntryForDate);
 saveButton.addEventListener("click", saveCurrentEntry);
 clearButton.addEventListener("click", clearForm);
 entryTab.addEventListener("click", () => showScreen("entry"));
 historyTab.addEventListener("click", () => showScreen("history"));
+graphsTab.addEventListener("click", () => showScreen("graphs"));
+calendarTab.addEventListener("click", () => showScreen("calendar"));
+previousMonthButton.addEventListener("click", () => { calendarMonth.setMonth(calendarMonth.getMonth() - 1); loadGoalsForCalendarMonth(); renderCalendar(); });
+nextMonthButton.addEventListener("click", () => { calendarMonth.setMonth(calendarMonth.getMonth() + 1); loadGoalsForCalendarMonth(); renderCalendar(); });
+calendarMonthPicker.addEventListener("change", () => { setCalendarMonthFromKey(calendarMonthPicker.value); loadGoalsForCalendarMonth(); renderCalendar(); });
+saveGoalsButton.addEventListener("click", saveGoalsForCalendarMonth);
+exportButton.addEventListener("click", exportData);
+importButton.addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", event => { const file = event.target.files[0]; if (file) importData(file); event.target.value = ""; });
+entryPreviousMonth.addEventListener("click", () => { entryCalendarMonth.setMonth(entryCalendarMonth.getMonth() - 1); renderEntryCalendar(); });
+entryNextMonth.addEventListener("click", () => { entryCalendarMonth.setMonth(entryCalendarMonth.getMonth() + 1); renderEntryCalendar(); });
+document.querySelectorAll(".range-button").forEach(button => button.addEventListener("click", () => { graphRangeDays = Number(button.dataset.range); document.querySelectorAll(".range-button").forEach(item => item.classList.remove("active")); button.classList.add("active"); renderGraphs(); }));
+averageGraphMode.addEventListener("click", () => { graphMode = "average"; averageGraphMode.classList.add("active"); dailyGraphMode.classList.remove("active"); renderGraphs(); });
+dailyGraphMode.addEventListener("click", () => { graphMode = "daily"; dailyGraphMode.classList.add("active"); averageGraphMode.classList.remove("active"); renderGraphs(); });
+window.addEventListener("resize", renderGraphs);

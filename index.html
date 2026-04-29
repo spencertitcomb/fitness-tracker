@@ -1,14 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f5f5f7" />
+  <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fitness" />
 
-  <title>Fitness Tracker</title>
+  <title>Spencer's Fitness Tracker</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -17,68 +18,40 @@
   <main class="app">
     <section id="entryScreen" class="screen active">
       <header>
-        <h1>Fitness</h1>
-        <p class="subtitle">Weight, exercise, and calorie deficit</p>
+        <h1>Spencer's Fitness Tracker</h1>
       </header>
 
       <section class="card">
-        <h2>Today</h2>
-
-        <div class="field">
-          <label for="date">Date</label>
-          <input id="date" type="date" />
+        <h2>Entry Date</h2>
+        <input id="date" type="date" class="hidden-date-input" />
+        <div class="entry-calendar-panel">
+          <div class="calendar-header small-calendar-header">
+            <button id="entryPreviousMonth" class="month-button">‹</button>
+            <h2 id="entryCalendarMonthTitle" class="calendar-month-title">Month</h2>
+            <button id="entryNextMonth" class="month-button">›</button>
+          </div>
+          <div class="weekday-row"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+          <div id="entryCalendarGrid" class="entry-calendar-grid"></div>
         </div>
+      </section>
 
-        <div class="field">
-          <label for="weight">Weight kg</label>
-          <input id="weight" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-
-        <div class="field">
-          <label for="calories">Calories</label>
-          <input id="calories" type="number" inputmode="numeric" placeholder="0" />
-        </div>
+      <section class="card">
+        <h2>Body</h2>
+        <div class="field"><label for="weight">Weight lb</label><input id="weight" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div class="field"><label for="calories">Calories</label><input id="calories" type="number" inputmode="numeric" placeholder="0" /></div>
       </section>
 
       <section class="card">
         <h2>Exercise</h2>
-
-        <div class="field">
-          <label for="run">Run km</label>
-          <input id="run" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-
-        <div class="field">
-          <label for="walk">Walk km</label>
-          <input id="walk" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-
-        <div class="field">
-          <label for="pushups">Pushups</label>
-          <input id="pushups" type="number" inputmode="numeric" placeholder="0" />
-        </div>
-
-        <div class="field">
-          <label for="plank">Plank min</label>
-          <input id="plank" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-
-        <div class="checkbox-row">
-          <label for="abs">Ab workout</label>
-          <input id="abs" type="checkbox" />
-        </div>
+        <div class="field"><label for="run">Run km</label><input id="run" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div class="field"><label for="walk">Walk km</label><input id="walk" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div class="field"><label for="pushups">Pushups</label><input id="pushups" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div class="checkbox-row"><label for="abs">Ab workout</label><input id="abs" type="checkbox" /></div>
       </section>
 
       <section class="summary-grid">
-        <div class="metric">
-          <div class="metric-title">Daily deficit</div>
-          <div id="dailyDeficit" class="metric-value">—</div>
-        </div>
-
-        <div class="metric">
-          <div class="metric-title">TDEE</div>
-          <div class="metric-value">2500</div>
-        </div>
+        <div class="metric"><div class="metric-title">Daily deficit</div><div id="dailyDeficit" class="metric-value">—</div></div>
+        <div class="metric"><div class="metric-title">TDEE</div><div class="metric-value">2500</div></div>
       </section>
 
       <section class="card save-card">
@@ -91,44 +64,105 @@
     <section id="historyScreen" class="screen">
       <header>
         <h1>History</h1>
-        <p class="subtitle">Averages and saved entries</p>
+        <p class="subtitle">Tap an entry to edit that day</p>
       </header>
 
       <section class="summary-grid">
-        <div class="metric">
-          <div class="metric-title">7 day intake</div>
-          <div id="avgIntake7" class="metric-value">—</div>
-        </div>
-
-        <div class="metric">
-          <div class="metric-title">7 day deficit</div>
-          <div id="avgDeficit7" class="metric-value">—</div>
-        </div>
+        <div class="metric"><div class="metric-title">7 day intake</div><div id="avgIntake7" class="metric-value">—</div></div>
+        <div class="metric"><div class="metric-title">7 day deficit</div><div id="avgDeficit7" class="metric-value">—</div></div>
       </section>
 
       <section class="summary-grid top-gap">
-        <div class="metric">
-          <div class="metric-title">30 day intake</div>
-          <div id="avgIntake30" class="metric-value">—</div>
-        </div>
-
-        <div class="metric">
-          <div class="metric-title">30 day deficit</div>
-          <div id="avgDeficit30" class="metric-value">—</div>
-        </div>
+        <div class="metric"><div class="metric-title">30 day intake</div><div id="avgIntake30" class="metric-value">—</div></div>
+        <div class="metric"><div class="metric-title">30 day deficit</div><div id="avgDeficit30" class="metric-value">—</div></div>
       </section>
 
       <section class="card top-gap">
         <h2>Entries</h2>
         <div id="historyList"></div>
       </section>
+
+      <section class="card top-gap">
+        <h2>Backup</h2>
+        <button id="exportButton">Export Data</button>
+        <button id="importButton" class="secondary-button">Import Data</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden />
+        <p id="backupMessage" class="saved-message"></p>
+      </section>
+    </section>
+
+    <section id="graphsScreen" class="screen">
+      <header>
+        <h1>Graphs</h1>
+        <p class="subtitle">Daily values or rolling averages</p>
+      </header>
+
+      <section class="card graph-controls-card">
+        <div class="range-tabs">
+          <button class="range-button" data-range="7">W</button>
+          <button class="range-button active" data-range="30">M</button>
+          <button class="range-button" data-range="60">2M</button>
+          <button class="range-button" data-range="120">4M</button>
+          <button class="range-button" data-range="180">6M</button>
+          <button class="range-button" data-range="365">Y</button>
+        </div>
+        <div class="graph-mode-tabs">
+          <button id="averageGraphMode" class="mode-button active">Averages</button>
+          <button id="dailyGraphMode" class="mode-button">Daily</button>
+        </div>
+      </section>
+
+      <section class="card"><h2>Weight</h2><canvas id="weightChart" class="chart" height="210"></canvas></section>
+      <section class="card"><h2>Calorie Deficit</h2><canvas id="deficitChart" class="chart" height="210"></canvas></section>
+      <section class="card"><h2>Run Distance</h2><canvas id="runChart" class="chart" height="210"></canvas></section>
+      <section class="card"><h2>Walk Distance</h2><canvas id="walkChart" class="chart" height="210"></canvas></section>
+      <section class="card"><h2>Pushups</h2><canvas id="pushupChart" class="chart" height="210"></canvas></section>
+    </section>
+
+    <section id="calendarScreen" class="screen">
+      <header>
+        <h1>Calendar</h1>
+        <p class="subtitle">Monthly goals and exercise view</p>
+      </header>
+
+      <section class="card">
+        <div class="calendar-header">
+          <button id="previousMonth" class="month-button">‹</button>
+          <h2 id="calendarMonthTitle" class="calendar-month-title">Month</h2>
+          <button id="nextMonth" class="month-button">›</button>
+        </div>
+        <div class="field"><label for="calendarMonthPicker">Choose month</label><input id="calendarMonthPicker" type="month" /></div>
+      </section>
+
+      <section class="card">
+        <div class="weekday-row"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Current Bests</h2>
+        <div id="calendarGoalSummary" class="goal-summary"></div>
+      </section>
+
+      <section class="card">
+        <h2>Goals</h2>
+        <div class="field"><label for="runStart">Run start km</label><input id="runStart" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div class="field"><label for="runGoal">Run goal km</label><input id="runGoal" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div class="field"><label for="pushupStart">Pushup start</label><input id="pushupStart" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div class="field"><label for="pushupGoal">Pushup goal</label><input id="pushupGoal" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div class="field"><label for="absGoal">Ab workouts goal</label><input id="absGoal" type="number" inputmode="numeric" placeholder="0" /></div>
+        <button id="saveGoalsButton" class="top-button">Save Goals</button>
+        <p id="goalsMessage" class="saved-message"></p>
+      </section>
     </section>
   </main>
 
   <nav>
-    <div class="nav-inner">
+    <div class="nav-inner four-tabs">
       <button id="entryTab" class="nav-button active">Entry</button>
       <button id="historyTab" class="nav-button">History</button>
+      <button id="graphsTab" class="nav-button">Graphs</button>
+      <button id="calendarTab" class="nav-button">Calendar</button>
     </div>
   </nav>
 
