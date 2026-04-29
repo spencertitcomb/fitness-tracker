@@ -62,20 +62,9 @@
     </section>
 
     <section id="historyScreen" class="screen">
-      <header>
-        <h1>History</h1>
-        <p class="subtitle">Tap an entry to edit that day</p>
-      </header>
+      <header></header>
 
-      <section class="summary-grid">
-        <div class="metric"><div class="metric-title">7 day intake</div><div id="avgIntake7" class="metric-value">—</div></div>
-        <div class="metric"><div class="metric-title">7 day deficit</div><div id="avgDeficit7" class="metric-value">—</div></div>
-      </section>
-
-      <section class="summary-grid top-gap">
-        <div class="metric"><div class="metric-title">30 day intake</div><div id="avgIntake30" class="metric-value">—</div></div>
-        <div class="metric"><div class="metric-title">30 day deficit</div><div id="avgDeficit30" class="metric-value">—</div></div>
-      </section>
+      
 
       <section class="card top-gap">
         <h2>Entries</h2>
@@ -92,19 +81,12 @@
     </section>
 
     <section id="graphsScreen" class="screen">
-      <header>
-        <h1>Graphs</h1>
-        <p class="subtitle">Daily values or rolling averages</p>
-      </header>
+      <header></header>
 
       <section class="card graph-controls-card">
         <div class="range-tabs">
-          <button class="range-button" data-range="7">W</button>
-          <button class="range-button active" data-range="30">M</button>
-          <button class="range-button" data-range="60">2M</button>
-          <button class="range-button" data-range="120">4M</button>
-          <button class="range-button" data-range="180">6M</button>
-          <button class="range-button" data-range="365">Y</button>
+          <button class="range-button" data-range="weekly">Weekly</button>
+          <button class="range-button active" data-range="monthly">Monthly</button>
         </div>
         <div class="graph-mode-tabs">
           <button id="averageGraphMode" class="mode-button active">Averages</button>
@@ -112,18 +94,15 @@
         </div>
       </section>
 
-      <section class="card"><h2>Weight</h2><canvas id="weightChart" class="chart" height="210"></canvas></section>
-      <section class="card"><h2>Calorie Deficit</h2><canvas id="deficitChart" class="chart" height="210"></canvas></section>
-      <section class="card"><h2>Run Distance</h2><canvas id="runChart" class="chart" height="210"></canvas></section>
-      <section class="card"><h2>Walk Distance</h2><canvas id="walkChart" class="chart" height="210"></canvas></section>
-      <section class="card"><h2>Pushups</h2><canvas id="pushupChart" class="chart" height="210"></canvas></section>
+      <section class="card"><h2>Weight</h2><canvas id="weightChart" class="chart"></canvas></section>
+      <section class="card"><h2>Calorie Deficit</h2><canvas id="deficitChart" class="chart"></canvas></section>
+      <section class="card"><h2>Run Distance</h2><canvas id="runChart" class="chart"></canvas></section>
+      <section class="card"><h2>Walk Distance</h2><canvas id="walkChart" class="chart"></canvas></section>
+      <section class="card"><h2>Pushups</h2><canvas id="pushupChart" class="chart"></canvas></section>
     </section>
 
     <section id="calendarScreen" class="screen">
-      <header>
-        <h1>Calendar</h1>
-        <p class="subtitle">Monthly goals and exercise view</p>
-      </header>
+      <header></header>
 
       <section class="card">
         <div class="calendar-header">
@@ -137,6 +116,18 @@
       <section class="card">
         <div class="weekday-row"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
         <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Calories</h2>
+        <section class="summary-grid">
+          <div class="metric"><div class="metric-title">7 day intake</div><div id="calendarAvgIntake7" class="metric-value">—</div></div>
+          <div class="metric"><div class="metric-title">7 day deficit</div><div id="calendarAvgDeficit7" class="metric-value">—</div></div>
+        </section>
+        <section class="summary-grid top-gap">
+          <div class="metric"><div class="metric-title">30 day intake</div><div id="calendarAvgIntake30" class="metric-value">—</div></div>
+          <div class="metric"><div class="metric-title">30 day deficit</div><div id="calendarAvgDeficit30" class="metric-value">—</div></div>
+        </section>
       </section>
 
       <section class="card">
@@ -160,9 +151,9 @@
   <nav>
     <div class="nav-inner four-tabs">
       <button id="entryTab" class="nav-button active">Entry</button>
-      <button id="historyTab" class="nav-button">History</button>
-      <button id="graphsTab" class="nav-button">Graphs</button>
       <button id="calendarTab" class="nav-button">Calendar</button>
+      <button id="graphsTab" class="nav-button">Graphs</button>
+      <button id="historyTab" class="nav-button">History</button>
     </div>
   </nav>
 

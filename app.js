@@ -2,7 +2,7 @@
 const TDEE = 2500;
 const STORAGE_KEY = "basic_fitness_tracker_entries";
 const GOALS_KEY = "fitness_tracker_monthly_goals";
-let graphRangeDays = 30;
+let graphRangeMode = "monthly";
 let graphMode = "average";
 let entryCalendarMonth = new Date();
 entryCalendarMonth.setDate(1);
@@ -30,6 +30,10 @@ const avgIntake7 = document.getElementById("avgIntake7");
 const avgDeficit7 = document.getElementById("avgDeficit7");
 const avgIntake30 = document.getElementById("avgIntake30");
 const avgDeficit30 = document.getElementById("avgDeficit30");
+const calendarAvgIntake7 = document.getElementById("calendarAvgIntake7");
+const calendarAvgDeficit7 = document.getElementById("calendarAvgDeficit7");
+const calendarAvgIntake30 = document.getElementById("calendarAvgIntake30");
+const calendarAvgDeficit30 = document.getElementById("calendarAvgDeficit30");
 const previousMonthButton = document.getElementById("previousMonth");
 const nextMonthButton = document.getElementById("nextMonth");
 const calendarMonthTitle = document.getElementById("calendarMonthTitle");
@@ -61,7 +65,13 @@ function saveGoals(goals) { localStorage.setItem(GOALS_KEY, JSON.stringify(goals
 function getGoalsForMonth(date) { const allGoals = loadGoals(); return allGoals[monthKeyFromDate(date)] || { runStart:null, runGoal:null, pushupStart:null, pushupGoal:null, absGoal:null }; }
 function numberOrNull(value) { if (value === "") return null; const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; }
 function intOrNull(value) { if (value === "") return null; const parsed = parseInt(value, 10); return Number.isFinite(parsed) ? parsed : null; }
-function displayNumber(value) { if (!Number.isFinite(value)) return ""; if (Math.abs(value) >= 100) return Math.round(value).toString(); return Number(value.toFixed(1)).toString(); }
+function displayNumber(value) {
+  if (!Number.isFinite(value)) return "";
+  if (Math.abs(value) >= 1000) return Math.round(value).toString();
+  if (Math.abs(value) >= 100) return value.toFixed(0);
+  if (Math.abs(value) >= 10) return value.toFixed(1);
+  return value.toFixed(1);
+}
 
 function updateDeficitPreview() { const calories = intOrNull(inputs.calories.value); if (calories === null) { dailyDeficit.textContent = "—"; dailyDeficit.className = "metric-value"; return; } const deficit = TDEE - calories; dailyDeficit.textContent = deficit.toString(); dailyDeficit.className = deficit >= 0 ? "metric-value positive" : "metric-value negative"; }
 function currentEntryFromForm() { const calories = intOrNull(inputs.calories.value); return { date: inputs.date.value, weight: numberOrNull(inputs.weight.value), calories, deficit: calories === null ? null : TDEE - calories, run: numberOrNull(inputs.run.value), walk: numberOrNull(inputs.walk.value), pushups: intOrNull(inputs.pushups.value), abs: inputs.abs.checked }; }
@@ -77,22 +87,259 @@ function saveGoalsForCalendarMonth() { const allGoals = loadGoals(); allGoals[mo
 function averageRecent(entries, days, key) { const recentValues = entries.slice(-days).map(entry => entry[key]).filter(value => typeof value === "number" && Number.isFinite(value)); if (recentValues.length === 0) return null; return recentValues.reduce((sum,value) => sum + value, 0) / recentValues.length; }
 function setAverage(element, value) { element.textContent = value === null ? "—" : Math.round(value).toString(); }
 
-function renderHistory() { const entries = loadEntries(); setAverage(avgIntake7, averageRecent(entries, 7, "calories")); setAverage(avgDeficit7, averageRecent(entries, 7, "deficit")); setAverage(avgIntake30, averageRecent(entries, 30, "calories")); setAverage(avgDeficit30, averageRecent(entries, 30, "deficit")); if (entries.length === 0) { historyList.innerHTML = '<p class="empty-state">No entries yet.</p>'; return; } historyList.innerHTML = entries.slice().reverse().map(entry => { const details = [entry.weight !== null ? `Weight ${entry.weight} lb` : null, entry.calories !== null ? `Calories ${entry.calories}` : null, entry.deficit !== null ? `Deficit ${entry.deficit}` : null, entry.run !== null ? `Run ${entry.run} km` : null, entry.walk !== null ? `Walk ${entry.walk} km` : null, entry.pushups !== null ? `Pushups ${entry.pushups}` : null, entry.abs ? "Abs" : null].filter(Boolean).join(" · "); return `<button class="history-item" data-date="${entry.date}"><div class="history-date">${entry.date}</div><div class="history-details">${details || "No details entered"}</div></button>`; }).join(""); document.querySelectorAll(".history-item").forEach(item => item.addEventListener("click", () => editEntry(item.dataset.date))); }
+function renderCalorieTracking() {
+  const entries = loadEntries();
+  
+  setAverage(calendarAvgIntake7, averageRecent(entries, 7, "calories"));
+  setAverage(calendarAvgDeficit7, averageRecent(entries, 7, "deficit"));
+  setAverage(calendarAvgIntake30, averageRecent(entries, 30, "calories"));
+  setAverage(calendarAvgDeficit30, averageRecent(entries, 30, "deficit"));
+}
 
-function filteredEntriesForGraph(entries) { if (entries.length === 0) return []; const today = new Date(); const end = new Date(today.getFullYear(), today.getMonth(), today.getDate()); const start = new Date(end); start.setDate(start.getDate() - graphRangeDays + 1); return entries.filter(entry => { const entryDate = dateFromString(entry.date); return entryDate >= start && entryDate <= end; }); }
+function renderHistory() { const entries = loadEntries(); renderCalorieTracking(); if (entries.length === 0) { historyList.innerHTML = '<p class="empty-state">No entries yet.</p>'; return; } historyList.innerHTML = entries.slice().reverse().map(entry => { const details = [entry.weight !== null ? `Weight ${entry.weight} lb` : null, entry.calories !== null ? `Calories ${entry.calories}` : null, entry.deficit !== null ? `Deficit ${entry.deficit}` : null, entry.run !== null ? `Run ${entry.run} km` : null, entry.walk !== null ? `Walk ${entry.walk} km` : null, entry.pushups !== null ? `Pushups ${entry.pushups}` : null, entry.abs ? "Abs" : null].filter(Boolean).join(" · "); return `<button class="history-item" data-date="${entry.date}"><div class="history-date">${entry.date}</div><div class="history-details">${details || "No details entered"}</div></button>`; }).join(""); document.querySelectorAll(".history-item").forEach(item => item.addEventListener("click", () => editEntry(item.dataset.date))); }
+
+function filteredEntriesForGraph(entries) {
+  if (entries.length === 0) return [];
+
+  let start;
+  let end;
+
+  if (graphRangeMode === "weekly") {
+    const today = new Date();
+    end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    start = new Date(end);
+    start.setDate(start.getDate() - 6);
+  } else {
+    start = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    end = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+  }
+
+  return entries.filter(entry => {
+    const entryDate = dateFromString(entry.date);
+    return entryDate >= start && entryDate <= end;
+  });
+}
 function rollingAverageData(entries, days, key) { return entries.map((entry, index) => { const windowEntries = entries.slice(Math.max(0, index - days + 1), index + 1); const values = windowEntries.map(item => item[key]).filter(value => typeof value === "number" && Number.isFinite(value)); if (values.length === 0) return { date: entry.date, value: null }; return { date: entry.date, value: values.reduce((sum,value) => sum + value, 0) / values.length }; }); }
 function dailyData(entries, key) { return entries.map(entry => ({ date: entry.date, value: typeof entry[key] === "number" && Number.isFinite(entry[key]) ? entry[key] : null })).filter(point => point.value !== null); }
 function renderGraphs() { const entries = filteredEntriesForGraph(loadEntries()); drawChart("weightChart", entries, "weight"); drawChart("deficitChart", entries, "deficit"); drawChart("runChart", entries, "run"); drawChart("walkChart", entries, "walk"); drawChart("pushupChart", entries, "pushups"); }
 function drawChart(canvasId, entries, key) { if (graphMode === "daily") drawBarChart(canvasId, entries, key); else drawAverageChart(canvasId, entries, key); }
 
-function setupCanvas(canvasId) { const canvas = document.getElementById(canvasId); if (!canvas) return null; const context = canvas.getContext("2d"); const pixelRatio = window.devicePixelRatio || 1; const width = canvas.clientWidth; const height = canvas.height; canvas.width = width * pixelRatio; canvas.height = height * pixelRatio; context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); context.clearRect(0, 0, width, height); return { canvas, context, width, height }; }
-function drawEmpty(context, message = "No data for selected range") { context.fillStyle = "#a1a1a6"; context.font = "15px system-ui"; context.fillText(message, 12, 35); }
-function getAxisScale(values) { let minValue = Math.min(...values); let maxValue = Math.max(...values); if (minValue === maxValue) { const buffer = Math.max(Math.abs(minValue) * 0.05, 1); return { minValue: minValue - buffer, maxValue: maxValue + buffer }; } const range = maxValue - minValue; const buffer = Math.max(range * 0.15, Math.abs(maxValue) < 20 ? 0.5 : 1); return { minValue: minValue - buffer, maxValue: maxValue + buffer }; }
+function setupCanvas(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
 
-function drawAverageChart(canvasId, entries, key) { const setup = setupCanvas(canvasId); if (!setup) return; const { context, width, height } = setup; const weekly = rollingAverageData(entries, 7, key).filter(point => point.value !== null); const monthly = rollingAverageData(entries, 30, key).filter(point => point.value !== null); const allValues = [...weekly, ...monthly].map(point => point.value); if (entries.length === 0 || allValues.length === 0) { drawEmpty(context); return; } const padding = { top:18, right:12, bottom:32, left:46 }; const chartWidth = width - padding.left - padding.right; const chartHeight = height - padding.top - padding.bottom; const { minValue, maxValue } = getAxisScale(allValues); const dates = entries.map(entry => entry.date); const xForDate = date => dates.length === 1 ? padding.left + chartWidth / 2 : padding.left + (dates.indexOf(date) / (dates.length - 1)) * chartWidth; const yForValue = value => padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight; drawGrid(context, width, height, padding, chartHeight, maxValue, minValue); drawLine(context, monthly, xForDate, yForValue, "#8e8e93", 2); drawLine(context, weekly, xForDate, yForValue, "#0a84ff", 3); drawLegend(context, height, padding); }
-function drawBarChart(canvasId, entries, key) { const setup = setupCanvas(canvasId); if (!setup) return; const { context, width, height } = setup; const data = dailyData(entries, key); if (entries.length === 0 || data.length === 0) { drawEmpty(context); return; } const padding = { top:18, right:12, bottom:32, left:46 }; const chartWidth = width - padding.left - padding.right; const chartHeight = height - padding.top - padding.bottom; const allValues = data.map(point => point.value); let { minValue, maxValue } = getAxisScale(allValues); if (minValue > 0) minValue = Math.max(0, minValue); drawGrid(context, width, height, padding, chartHeight, maxValue, minValue); const startDate = new Date(); startDate.setHours(0,0,0,0); startDate.setDate(startDate.getDate() - graphRangeDays + 1); const endDate = new Date(); endDate.setHours(0,0,0,0); const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000)); const barWidth = Math.max(2, Math.min(18, chartWidth / graphRangeDays * 0.72)); data.forEach(point => { const dayOffset = Math.round((dateFromString(point.date) - startDate) / 86400000); const x = padding.left + (dayOffset / totalDays) * chartWidth - barWidth / 2; const zeroY = padding.top + chartHeight - ((0 - minValue) / (maxValue - minValue)) * chartHeight; const y = padding.top + chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight; const baseline = minValue <= 0 && maxValue >= 0 ? zeroY : padding.top + chartHeight; context.fillStyle = "#0a84ff"; context.fillRect(x, Math.min(y, baseline), barWidth, Math.max(2, Math.abs(baseline - y))); }); context.fillStyle = "#a1a1a6"; context.font = "12px system-ui"; context.fillText("Daily", padding.left, height - 8); }
-function drawGrid(context, width, height, padding, chartHeight, maxValue, minValue) { context.strokeStyle = "#3a3a3c"; context.lineWidth = 1; context.fillStyle = "#a1a1a6"; context.font = "11px system-ui"; const lines = 6; for (let i = 0; i < lines; i++) { const ratio = i / (lines - 1); const y = padding.top + ratio * chartHeight; const value = maxValue - ratio * (maxValue - minValue); context.beginPath(); context.moveTo(padding.left, y); context.lineTo(width - padding.right, y); context.stroke(); context.fillText(displayNumber(value), 3, y + 4); } }
-function drawLegend(context, height, padding) { context.fillStyle = "#a1a1a6"; context.font = "12px system-ui"; context.fillText("Weekly", padding.left, height - 8); context.fillStyle = "#0a84ff"; context.beginPath(); context.arc(padding.left + 48, height - 12, 4, 0, Math.PI * 2); context.fill(); context.fillStyle = "#a1a1a6"; context.fillText("Monthly", padding.left + 70, height - 8); context.fillStyle = "#8e8e93"; context.beginPath(); context.arc(padding.left + 128, height - 12, 4, 0, Math.PI * 2); context.fill(); }
+  const context = canvas.getContext("2d");
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(280, Math.floor(rect.width));
+  const height = Math.max(210, Math.floor(rect.height || 220));
+
+  canvas.width = Math.floor(width * pixelRatio);
+  canvas.height = Math.floor(height * pixelRatio);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, width, height);
+
+  return { canvas, context, width, height };
+}
+function drawEmpty(context, message = "No data for selected range") { context.fillStyle = "#a1a1a6"; context.font = "15px system-ui"; context.fillText(message, 12, 35); }
+function getAxisScale(values, key) {
+  let minValue = Math.min(...values);
+  let maxValue = Math.max(...values);
+
+  if (minValue === maxValue) {
+    const singleBuffer = key === "weight" ? 2 : Math.max(Math.abs(minValue) * 0.08, 1);
+    return { minValue: minValue - singleBuffer, maxValue: maxValue + singleBuffer };
+  }
+
+  const range = maxValue - minValue;
+  let buffer;
+
+  if (key === "weight") {
+    buffer = Math.max(range * 0.25, 1.5);
+  } else if (key === "deficit") {
+    buffer = Math.max(range * 0.18, 100);
+  } else {
+    buffer = Math.max(range * 0.2, maxValue < 10 ? 0.5 : 2);
+  }
+
+  return { minValue: minValue - buffer, maxValue: maxValue + buffer };
+}
+
+function drawAverageChart(canvasId, entries, key) {
+  const setup = setupCanvas(canvasId);
+  if (!setup) return;
+  const { context, width, height } = setup;
+
+  const weekly = rollingAverageData(entries, 7, key).filter(point => point.value !== null);
+  const monthly = rollingAverageData(entries, 30, key).filter(point => point.value !== null);
+  const allValues = [...weekly, ...monthly].map(point => point.value);
+
+  if (entries.length === 0 || allValues.length === 0) {
+    drawEmpty(context);
+    return;
+  }
+
+  const padding = { top: 18, right: 10, bottom: 34, left: 54 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const { minValue, maxValue } = getAxisScale(allValues, key);
+  const dates = entries.map(entry => entry.date);
+
+  const xForDate = date => dates.length === 1
+    ? padding.left + chartWidth / 2
+    : padding.left + (dates.indexOf(date) / (dates.length - 1)) * chartWidth;
+
+  const yForValue = value => padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight;
+
+  drawGrid(context, width, height, padding, chartHeight, maxValue, minValue);
+
+  // Zero line for deficit graphs
+  if (key === "deficit" && minValue <= 0 && maxValue >= 0) {
+    const zeroY = padding.top + chartHeight - ((0 - minValue) / (maxValue - minValue)) * chartHeight;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 2;
+    context.setLineDash([6,6]);
+    context.beginPath();
+    context.moveTo(padding.left, zeroY);
+    context.lineTo(width - padding.right, zeroY);
+    context.stroke();
+    context.setLineDash([]);
+  }
+  drawLine(context, monthly, xForDate, yForValue, "#8e8e93", 2);
+  drawLine(context, weekly, xForDate, yForValue, "#0a84ff", 3);
+  drawLegend(context, height, padding);
+}
+function drawBarChart(canvasId, entries, key) {
+  const setup = setupCanvas(canvasId);
+  if (!setup) return;
+  const { context, width, height } = setup;
+  const data = dailyData(entries, key);
+
+  if (entries.length === 0 || data.length === 0) {
+    drawEmpty(context);
+    return;
+  }
+
+  const padding = { top: 18, right: 10, bottom: 42, left: 54 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const allValues = data.map(point => point.value);
+  let { minValue, maxValue } = getAxisScale(allValues, key);
+
+  if (key !== "weight" && minValue > 0) minValue = 0;
+
+  drawGrid(context, width, height, padding, chartHeight, maxValue, minValue);
+
+  // Zero line for deficit graphs
+  if (key === "deficit" && minValue <= 0 && maxValue >= 0) {
+    const zeroY = padding.top + chartHeight - ((0 - minValue) / (maxValue - minValue)) * chartHeight;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 2;
+    context.setLineDash([6,6]);
+    context.beginPath();
+    context.moveTo(padding.left, zeroY);
+    context.lineTo(width - padding.right, zeroY);
+    context.stroke();
+    context.setLineDash([]);
+  }
+
+  let startDate;
+  let endDate;
+
+  if (graphRangeMode === "weekly") {
+    const today = new Date();
+    endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 6);
+  } else {
+    startDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    endDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+  }
+
+  const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000));
+  const visibleDays = totalDays + 1;
+  const slotWidth = chartWidth / visibleDays;
+  const barWidth = graphRangeMode === "weekly"
+    ? Math.max(20, slotWidth * 0.78)
+    : Math.max(4, Math.min(14, slotWidth * 0.72));
+
+  data.forEach(point => {
+    const dayOffset = Math.round((dateFromString(point.date) - startDate) / 86400000);
+    const x = padding.left + (dayOffset + 0.5) * slotWidth - barWidth / 2;
+    const baselineValue = key === "weight" ? minValue : 0;
+    const baselineY = padding.top + chartHeight - ((baselineValue - minValue) / (maxValue - minValue)) * chartHeight;
+    const y = padding.top + chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight;
+
+    context.fillStyle = "#0a84ff";
+    context.fillRect(x, Math.min(y, baselineY), barWidth, Math.max(2, Math.abs(baselineY - y)));
+  });
+
+  drawBarXAxis(context, startDate, visibleDays, padding, chartWidth, chartHeight);
+}
+function drawBarXAxis(context, startDate, visibleDays, padding, chartWidth, chartHeight) {
+  context.fillStyle = "#a1a1a6";
+  context.font = "11px system-ui";
+  context.textAlign = "center";
+
+  const labelY = padding.top + chartHeight + 22;
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  if (graphRangeMode === "weekly") {
+    for (let i = 0; i < visibleDays; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const x = padding.left + (i + 0.5) * (chartWidth / visibleDays);
+      context.fillText(weekdays[date.getDay()], x, labelY);
+    }
+  } else {
+    for (let i = 0; i < visibleDays; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const isFirstDay = i === 0;
+      const isWeekStart = date.getDay() === 0;
+
+      if (isFirstDay || isWeekStart) {
+        const x = padding.left + (i + 0.5) * (chartWidth / visibleDays);
+        context.fillText(String(date.getDate()), x, labelY);
+      }
+    }
+  }
+
+  context.textAlign = "left";
+}
+
+function drawGrid(context, width, height, padding, chartHeight, maxValue, minValue) {
+  context.strokeStyle = "#3a3a3c";
+  context.lineWidth = 1;
+  context.fillStyle = "#a1a1a6";
+  context.font = "11px system-ui";
+  context.textAlign = "right";
+
+  const lines = 5;
+  for (let i = 0; i < lines; i++) {
+    const ratio = i / (lines - 1);
+    const y = padding.top + ratio * chartHeight;
+    const value = maxValue - ratio * (maxValue - minValue);
+
+    context.beginPath();
+    context.moveTo(padding.left, y);
+    context.lineTo(width - padding.right, y);
+    context.stroke();
+    context.fillText(displayNumber(value), padding.left - 8, y + 4);
+  }
+
+  context.textAlign = "left";
+}
+function drawLegend(context, height, padding) {
+  context.fillStyle = "#a1a1a6";
+  context.font = "12px system-ui";
+
+  context.fillText("Weekly", padding.left, height - 8);
+  context.fillStyle = "#0a84ff";
+  context.beginPath();
+  context.arc(padding.left + 48, height - 12, 4, 0, Math.PI * 2);
+  context.fill();
+}
 function drawLine(context, points, xForDate, yForValue, color, lineWidth) { if (points.length === 0) return; context.strokeStyle = color; context.lineWidth = lineWidth; context.lineCap = "round"; context.lineJoin = "round"; context.beginPath(); points.forEach((point, index) => { const x = xForDate(point.date); const y = yForValue(point.value); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); }); context.stroke(); }
 
 function monthEntriesWithBests(entries, year, monthIndex) { let bestRun = 0, bestPushups = 0, cumulativeAbs = 0; const result = new Map(); const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); const entryMap = new Map(entries.map(entry => [entry.date, entry])); for (let day = 1; day <= daysInMonth; day++) { const dateString = dateStringFromParts(year, monthIndex, day); const entry = entryMap.get(dateString); bestRun = Math.max(bestRun, typeof entry?.run === "number" ? entry.run : 0); bestPushups = Math.max(bestPushups, typeof entry?.pushups === "number" ? entry.pushups : 0); cumulativeAbs += entry?.abs ? 1 : 0; result.set(dateString, { entry, bestRun, bestPushups, cumulativeAbs }); } return result; }
@@ -102,7 +349,7 @@ function renderCalendar() { const entries = loadEntries(); const year = calendar
 
 function exportData() { const backup = { app:"Spencer's Fitness Tracker", version:6, exportedAt:new Date().toISOString(), entries:loadEntries(), goals:loadGoals() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type:"application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `fitness-tracker-backup-${todayString()}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); backupMessage.textContent = "Exported"; setTimeout(() => backupMessage.textContent = "", 1500); }
 function importData(file) { const reader = new FileReader(); reader.onload = event => { try { const parsed = JSON.parse(event.target.result); const importedEntries = Array.isArray(parsed) ? parsed : parsed.entries; if (!Array.isArray(importedEntries)) throw new Error("Invalid backup format"); const cleanedEntries = importedEntries.filter(entry => typeof entry.date === "string").map(entry => { const calories = typeof entry.calories === "number" ? entry.calories : null; return { date:entry.date, weight:typeof entry.weight === "number" ? entry.weight : null, calories, deficit:calories === null ? null : TDEE - calories, run:typeof entry.run === "number" ? entry.run : null, walk:typeof entry.walk === "number" ? entry.walk : null, pushups:typeof entry.pushups === "number" ? entry.pushups : null, abs:Boolean(entry.abs) }; }).sort((a,b) => a.date.localeCompare(b.date)); saveEntries(cleanedEntries); if (parsed.goals && typeof parsed.goals === "object") saveGoals(parsed.goals); loadEntryForDate(); loadGoalsForCalendarMonth(); refreshAllViews(); backupMessage.textContent = "Imported"; setTimeout(() => backupMessage.textContent = "", 1500); } catch { backupMessage.textContent = "Import failed"; setTimeout(() => backupMessage.textContent = "", 1800); } }; reader.readAsText(file); }
-function refreshAllViews() { renderHistory(); renderGraphs(); renderCalendar(); renderEntryCalendar(); }
+function refreshAllViews() { renderCalorieTracking(); renderHistory(); renderGraphs(); renderCalendar(); renderEntryCalendar(); }
 function showScreen(screenName) { const showingEntry = screenName === "entry"; const showingHistory = screenName === "history"; const showingGraphs = screenName === "graphs"; const showingCalendar = screenName === "calendar"; entryScreen.classList.toggle("active", showingEntry); historyScreen.classList.toggle("active", showingHistory); graphsScreen.classList.toggle("active", showingGraphs); calendarScreen.classList.toggle("active", showingCalendar); entryTab.classList.toggle("active", showingEntry); historyTab.classList.toggle("active", showingHistory); graphsTab.classList.toggle("active", showingGraphs); calendarTab.classList.toggle("active", showingCalendar); if (showingEntry) renderEntryCalendar(); if (showingHistory) renderHistory(); if (showingGraphs) renderGraphs(); if (showingCalendar) { loadGoalsForCalendarMonth(); renderCalendar(); } }
 
 inputs.date.value = todayString();
@@ -117,16 +364,36 @@ entryTab.addEventListener("click", () => showScreen("entry"));
 historyTab.addEventListener("click", () => showScreen("history"));
 graphsTab.addEventListener("click", () => showScreen("graphs"));
 calendarTab.addEventListener("click", () => showScreen("calendar"));
-previousMonthButton.addEventListener("click", () => { calendarMonth.setMonth(calendarMonth.getMonth() - 1); loadGoalsForCalendarMonth(); renderCalendar(); });
-nextMonthButton.addEventListener("click", () => { calendarMonth.setMonth(calendarMonth.getMonth() + 1); loadGoalsForCalendarMonth(); renderCalendar(); });
-calendarMonthPicker.addEventListener("change", () => { setCalendarMonthFromKey(calendarMonthPicker.value); loadGoalsForCalendarMonth(); renderCalendar(); });
+previousMonthButton.addEventListener("click", () => {
+  calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+  loadGoalsForCalendarMonth();
+  renderCalendar();
+  if (graphRangeMode === "monthly") renderGraphs();
+});
+nextMonthButton.addEventListener("click", () => {
+  calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+  loadGoalsForCalendarMonth();
+  renderCalendar();
+  if (graphRangeMode === "monthly") renderGraphs();
+});
+calendarMonthPicker.addEventListener("change", () => {
+  setCalendarMonthFromKey(calendarMonthPicker.value);
+  loadGoalsForCalendarMonth();
+  renderCalendar();
+  if (graphRangeMode === "monthly") renderGraphs();
+});
 saveGoalsButton.addEventListener("click", saveGoalsForCalendarMonth);
 exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", () => importFile.click());
 importFile.addEventListener("change", event => { const file = event.target.files[0]; if (file) importData(file); event.target.value = ""; });
 entryPreviousMonth.addEventListener("click", () => { entryCalendarMonth.setMonth(entryCalendarMonth.getMonth() - 1); renderEntryCalendar(); });
 entryNextMonth.addEventListener("click", () => { entryCalendarMonth.setMonth(entryCalendarMonth.getMonth() + 1); renderEntryCalendar(); });
-document.querySelectorAll(".range-button").forEach(button => button.addEventListener("click", () => { graphRangeDays = Number(button.dataset.range); document.querySelectorAll(".range-button").forEach(item => item.classList.remove("active")); button.classList.add("active"); renderGraphs(); }));
+document.querySelectorAll(".range-button").forEach(button => button.addEventListener("click", () => {
+  graphRangeMode = button.dataset.range;
+  document.querySelectorAll(".range-button").forEach(item => item.classList.remove("active"));
+  button.classList.add("active");
+  renderGraphs();
+}));
 averageGraphMode.addEventListener("click", () => { graphMode = "average"; averageGraphMode.classList.add("active"); dailyGraphMode.classList.remove("active"); renderGraphs(); });
 dailyGraphMode.addEventListener("click", () => { graphMode = "daily"; dailyGraphMode.classList.add("active"); averageGraphMode.classList.remove("active"); renderGraphs(); });
 window.addEventListener("resize", renderGraphs);
