@@ -331,14 +331,7 @@ function drawGrid(context, width, height, padding, chartHeight, maxValue, minVal
   context.textAlign = "left";
 }
 function drawLegend(context, height, padding) {
-  context.fillStyle = "#a1a1a6";
-  context.font = "12px system-ui";
-
-  context.fillText("Weekly", padding.left, height - 8);
-  context.fillStyle = "#0a84ff";
-  context.beginPath();
-  context.arc(padding.left + 48, height - 12, 4, 0, Math.PI * 2);
-  context.fill();
+  // legend removed
 }
 function drawLine(context, points, xForDate, yForValue, color, lineWidth) { if (points.length === 0) return; context.strokeStyle = color; context.lineWidth = lineWidth; context.lineCap = "round"; context.lineJoin = "round"; context.beginPath(); points.forEach((point, index) => { const x = xForDate(point.date); const y = yForValue(point.value); if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); }); context.stroke(); }
 
