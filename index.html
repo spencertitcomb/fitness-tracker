@@ -35,23 +35,24 @@
         </div>
       </section>
 
-      <section class="card">
+      <section id="bodyCard" class="card">
         <h2>Body</h2>
-        <div class="field"><label for="weight">Weight lb</label><input id="weight" type="number" inputmode="decimal" placeholder="0" /></div>
-        <div class="field"><label for="calories">Calories</label><input id="calories" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div id="weightField" class="field"><label id="weightLabel" for="weight">Weight lb</label><input id="weight" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div id="caloriesField" class="field"><label for="calories">Calories</label><input id="calories" type="number" inputmode="numeric" placeholder="0" /></div>
       </section>
 
-      <section class="card">
+      <section id="exerciseCard" class="card">
         <h2>Exercise</h2>
-        <div class="field"><label for="run">Run km</label><input id="run" type="number" inputmode="decimal" placeholder="0" /></div>
-        <div class="field"><label for="walk">Walk km</label><input id="walk" type="number" inputmode="decimal" placeholder="0" /></div>
-        <div class="field"><label for="pushups">Pushups</label><input id="pushups" type="number" inputmode="numeric" placeholder="0" /></div>
-        <div class="checkbox-row"><label for="abs">Ab workout</label><input id="abs" type="checkbox" /></div>
+        <div id="runField" class="field"><label for="run">Run km</label><input id="run" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div id="walkField" class="field"><label for="walk">Walk km</label><input id="walk" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div id="pushupsField" class="field"><label for="pushups">Pushups</label><input id="pushups" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div id="absField" class="checkbox-row"><label for="abs">Ab workout</label><input id="abs" type="checkbox" /></div>
+        <div id="notesField" class="notes-field"><label for="workoutNotes">Workout</label><textarea id="workoutNotes" placeholder="What workout did you do?"></textarea></div>
       </section>
 
       <section class="summary-grid">
-        <div class="metric"><div class="metric-title">Daily deficit</div><div id="dailyDeficit" class="metric-value">—</div></div>
-        <div class="metric"><div class="metric-title">TDEE</div><div class="metric-value">2500</div></div>
+        <div id="dailyDeficitMetric" class="metric"><div class="metric-title">Daily deficit</div><div id="dailyDeficit" class="metric-value">—</div></div>
+        <div id="tdeeMetric" class="metric"><div class="metric-title">TDEE</div><div id="tdeeDisplay" class="metric-value">2500</div></div>
       </section>
 
       <section class="card save-card">
@@ -61,15 +62,53 @@
       </section>
     </section>
 
-    <section id="historyScreen" class="screen">
+    <section id="settingsScreen" class="screen">
       <header></header>
 
-      
-
-      <section class="card top-gap">
-        <h2>Entries</h2>
-        <div id="historyList"></div>
+      <section class="card">
+        <h2>Settings</h2>
+        <div class="field"><label for="settingName">Name</label><input id="settingName" type="text" placeholder="Spencer" /></div>
+        <div class="field"><label for="settingTdee">TDEE</label><input id="settingTdee" type="number" inputmode="numeric" placeholder="2500" /></div>
+        <div class="field"><label for="settingWeightUnit">Weight unit</label><select id="settingWeightUnit"><option value="lb">lb</option><option value="kg">kg</option></select></div>
       </section>
+
+      <section class="card">
+        <h2>Entry Fields</h2>
+        <div class="settings-toggle"><label for="showWeight">Weight</label><input id="showWeight" type="checkbox" /></div>
+        <div class="metric-config weight-config"><label for="weightSettingUnit">Unit</label><select id="weightSettingUnit"><option value="lb">lb</option><option value="kg">kg</option></select></div>
+
+        <div class="settings-toggle"><label for="showCalories">Calories</label><input id="showCalories" type="checkbox" /></div>
+        <div class="metric-config calories-config"><label for="calorieMetricType">Metric</label><select id="calorieMetricType"><option value="intake">Calorie intake</option><option value="deficit">Calorie deficit</option></select></div>
+        <div class="metric-config calories-config"><label for="calorieGoalType">Goal type</label><select id="calorieGoalType"><option value="dailyTarget">Daily target</option><option value="averageTarget">Average target</option><option value="none">No goal</option></select></div>
+
+        <div class="settings-toggle"><label for="showRun">Run</label><input id="showRun" type="checkbox" /></div>
+        <div class="metric-config run-config"><label for="runMetricType">Metric</label><select id="runMetricType"><option value="totalDistance">Total Distance</option><option value="specificDistance">Specific Distance</option></select></div>
+        <div class="metric-config run-config"><label for="runGoalType">Goal</label><select id="runGoalType"><option value="monthlyGoal">Monthly goal</option><option value="none">No goal</option></select></div>
+
+        <div class="settings-toggle"><label for="showWalk">Walk</label><input id="showWalk" type="checkbox" /></div>
+        <div class="metric-config walk-config"><label for="walkMetricType">Metric</label><select id="walkMetricType"><option value="totalDistance">Total Distance</option><option value="specificDistance">Specific Distance</option></select></div>
+        <div class="metric-config walk-config"><label for="walkGoalType">Goal</label><select id="walkGoalType"><option value="monthlyGoal">Monthly goal</option><option value="none">No goal</option></select></div>
+
+        <div class="settings-toggle"><label for="showPushups">Pushups</label><input id="showPushups" type="checkbox" /></div>
+        <div class="metric-config pushups-config"><label for="pushupMetricType">Metric</label><select id="pushupMetricType"><option value="reps">Number of reps</option></select></div>
+        <div class="metric-config pushups-config"><label for="pushupGoalType">Goal</label><select id="pushupGoalType"><option value="monthlyTotal">Total reps monthly</option><option value="maxRepCount">Max rep count</option></select></div>
+
+        <div class="settings-toggle"><label for="showAbs">Ab workout</label><input id="showAbs" type="checkbox" /></div>
+        <div class="metric-config abs-config"><label for="absMetricType">Metric</label><select id="absMetricType"><option value="checkbox">Completion checkbox</option><option value="minutes">Minutes</option></select></div>
+        <div class="metric-config abs-config"><label for="absGoalType">Goal type</label><select id="absGoalType"><option value="monthlyCount">Monthly count</option><option value="none">No goal</option></select></div>
+
+        <div class="settings-toggle"><label for="showNotes">Workout</label><input id="showNotes" type="checkbox" /></div>
+      </section>
+
+      <section class="card">
+        <button id="saveSettingsButton">Save Settings</button>
+        <p id="settingsMessage" class="saved-message"></p>
+      </section>
+
+      <details class="card collapsible-card">
+        <summary>History Entries</summary>
+        <div id="historyList"></div>
+      </details>
 
       <section class="card top-gap">
         <h2>Backup</h2>
@@ -80,13 +119,17 @@
       </section>
     </section>
 
+    <section id="historyScreen" class="screen"></section>
+
     <section id="graphsScreen" class="screen">
       <header></header>
 
       <section class="card graph-controls-card">
+        <div class="field graph-start-field"><label for="graphStartDate">Date</label><input id="graphStartDate" type="date" /></div>
         <div class="range-tabs">
           <button class="range-button" data-range="weekly">Weekly</button>
           <button class="range-button active" data-range="monthly">Monthly</button>
+          <button class="range-button" data-range="year">Year</button>
         </div>
         <div class="graph-mode-tabs">
           <button id="averageGraphMode" class="mode-button active">Averages</button>
@@ -94,11 +137,11 @@
         </div>
       </section>
 
-      <section class="card"><h2>Weight</h2><canvas id="weightChart" class="chart"></canvas></section>
-      <section class="card"><h2>Calorie Deficit</h2><canvas id="deficitChart" class="chart"></canvas></section>
-      <section class="card"><h2>Run Distance</h2><canvas id="runChart" class="chart"></canvas></section>
-      <section class="card"><h2>Walk Distance</h2><canvas id="walkChart" class="chart"></canvas></section>
-      <section class="card"><h2>Pushups</h2><canvas id="pushupChart" class="chart"></canvas></section>
+      <section id="weightGraphCard" class="card"><h2>Weight</h2><canvas id="weightChart" class="chart"></canvas></section>
+      <section id="deficitGraphCard" class="card"><h2>Calorie Deficit</h2><canvas id="deficitChart" class="chart"></canvas></section>
+      <section id="runGraphCard" class="card"><h2>Run Distance</h2><canvas id="runChart" class="chart"></canvas></section>
+      <section id="walkGraphCard" class="card"><h2>Walk Distance</h2><canvas id="walkChart" class="chart"></canvas></section>
+      <section id="pushupGraphCard" class="card"><h2>Pushups</h2><canvas id="pushupChart" class="chart"></canvas></section>
     </section>
 
     <section id="calendarScreen" class="screen">
@@ -118,7 +161,12 @@
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
 
-      <section class="card">
+      <section id="calendarDayDetails" class="card hidden">
+        <h2 id="calendarDayDetailsTitle">Entry Details</h2>
+        <div id="calendarDayDetailsBody" class="calendar-details-body"></div>
+      </section>
+
+      <section id="calendarCaloriesCard" class="card">
         <h2>Calories</h2>
         <section class="summary-grid">
           <div class="metric"><div class="metric-title">7 day intake</div><div id="calendarAvgIntake7" class="metric-value">—</div></div>
@@ -130,18 +178,18 @@
         </section>
       </section>
 
-      <section class="card">
+      <section id="currentBestsCard" class="card">
         <h2>Current Bests</h2>
         <div id="calendarGoalSummary" class="goal-summary"></div>
       </section>
 
       <section class="card">
         <h2>Goals</h2>
-        <div class="field"><label for="runStart">Run start km</label><input id="runStart" type="number" inputmode="decimal" placeholder="0" /></div>
-        <div class="field"><label for="runGoal">Run goal km</label><input id="runGoal" type="number" inputmode="decimal" placeholder="0" /></div>
-        <div class="field"><label for="pushupStart">Pushup start</label><input id="pushupStart" type="number" inputmode="numeric" placeholder="0" /></div>
-        <div class="field"><label for="pushupGoal">Pushup goal</label><input id="pushupGoal" type="number" inputmode="numeric" placeholder="0" /></div>
-        <div class="field"><label for="absGoal">Ab workouts goal</label><input id="absGoal" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div id="runStartGoalField" class="field"><label for="runStart">Run start km</label><input id="runStart" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div id="runEndGoalField" class="field"><label for="runGoal">Run goal km</label><input id="runGoal" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div id="pushupStartGoalField" class="field"><label for="pushupStart">Pushup start</label><input id="pushupStart" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div id="pushupEndGoalField" class="field"><label for="pushupGoal">Pushup goal</label><input id="pushupGoal" type="number" inputmode="numeric" placeholder="0" /></div>
+        <div id="absGoalField" class="field"><label for="absGoal">Ab workouts goal</label><input id="absGoal" type="number" inputmode="numeric" placeholder="0" /></div>
         <button id="saveGoalsButton" class="top-button">Save Goals</button>
         <p id="goalsMessage" class="saved-message"></p>
       </section>
@@ -151,9 +199,9 @@
   <nav>
     <div class="nav-inner four-tabs">
       <button id="entryTab" class="nav-button active">Entry</button>
-      <button id="calendarTab" class="nav-button">Calendar</button>
+      <button id="calendarTab" class="nav-button">Tracking</button>
       <button id="graphsTab" class="nav-button">Graphs</button>
-      <button id="historyTab" class="nav-button">History</button>
+      <button id="settingsTab" class="nav-button">Settings</button>
     </div>
   </nav>
 
